@@ -805,10 +805,11 @@
 		"targetPlatform": "undefined",
 		"isApplicationScoped": false,
 		"isPreReleaseVersion": false,
-		"hasPreReleaseVersion": false,
-		"installedTimestamp": 1716575528659,
+		"hasPreReleaseVersion": true,
+		"installedTimestamp": 1716592854899,
 		"pinned": false,
 		"preRelease": false,
-		"source": "gallery"
+		"source": "gallery",
+		"updated": true
 	}
 }

@@ -17621,10 +17621,11 @@
 		"targetPlatform": "undefined",
 		"isApplicationScoped": false,
 		"isPreReleaseVersion": false,
-		"hasPreReleaseVersion": false,
-		"installedTimestamp": 1716577442965,
+		"hasPreReleaseVersion": true,
+		"installedTimestamp": 1716592855242,
 		"pinned": false,
 		"preRelease": false,
-		"source": "gallery"
+		"source": "gallery",
+		"updated": true
 	}
 }
