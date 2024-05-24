@@ -1,0 +1,34 @@
+{
+  "build": [
+    {
+      "entries": {
+        "extension": "src/index.ts"
+      },
+      "type": "extension"
+    },
+    {
+      "entries": {
+        "languageserver": "../language-server/src/index.ts"
+      },
+      "type": "node"
+    },
+    {
+      "entries": {
+        "Settings": "../plugins/connection-manager/webview/ui/screens/Settings/index.tsx",
+        "Results": "../plugins/connection-manager/webview/ui/screens/Results/index.tsx",
+        "theme": "../plugins/connection-manager/webview/ui/sass/theme.scss"
+      },
+      "type": "webview"
+    }
+  ],
+  "patch": [
+    {
+      "type": "contentReplace",
+      "entries": {
+        "README.md": "../../README.md"
+      },
+      "regexStr": "<!-- HEADER START -->[\\s\\S]+<!-- HEADER END -->",
+      "replacement": "# SQLTools database management"
+    }
+  ]
+}
