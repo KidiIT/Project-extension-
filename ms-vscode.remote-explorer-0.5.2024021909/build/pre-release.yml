@@ -1,0 +1,57 @@
+# Run on a schedule
+trigger: none
+pr: none
+
+schedules:
+  - cron: '0 9 * * Mon-Thu'
+    displayName: Nightly Release Schedule
+    branches:
+      include:
+        - main
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
+
+parameters:
+  - name: publishExtension
+    displayName: 🚀 Publish Extension
+    type: boolean
+    default: false
+
+extends:
+  template: azure-pipelines/extension/pre-release.yml@templates
+  parameters:
+    workingDirectory: $(Build.SourcesDirectory)
+    l10nSourcePaths: $(Build.SourcesDirectory)/src
+    vscePackageArgs: --no-dependencies
+    buildSteps:
+      - task: AzureKeyVault@1
+        displayName: "Azure Key Vault: Get Secrets"
+        inputs:
+          azureSubscription: "vscode-builds-subscription"
+          KeyVaultName: vscode-build-secrets
+          SecretsFilter: "devdiv-packaging"
+
+      - script: |
+          npm set "//devdiv.pkgs.visualstudio.com/DevDiv/_packaging/vscode-internal/npm/:username=devdiv"
+          npm set "//devdiv.pkgs.visualstudio.com/DevDiv/_packaging/vscode-internal/npm/:email=unset"
+          npm set "//devdiv.pkgs.visualstudio.com/DevDiv/_packaging/vscode-internal/npm/:_password=$(devdiv-packaging)"
+        displayName: "Set npm registry token"
+
+      - script: npm install --frozen-lockfile
+        displayName: Install dependencies
+
+      - script: node build/nightlyVersionBump.js
+        displayName: Bump Nightly version
+
+      - script: npm run package-web
+        displayName: Compile
+
+    ghCreateTag: false
+
+    publishExtension: ${{ parameters.publishExtension }}
