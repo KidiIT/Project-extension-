@@ -1,0 +1,181 @@
+{
+	"name": "vscode-js-profile-flame",
+	"displayName": "Flame Chart Visualizer for JavaScript Profiles",
+	"version": "1.0.9",
+	"description": "Flame graph visualizer for Heap and CPU profiles taken from the JavaScript debugger",
+	"author": "Connor Peet <connor@peet.io>",
+	"homepage": "https://github.com/microsoft/vscode-js-profile-visualizer#readme",
+	"license": "MIT",
+	"main": "out/extension.js",
+	"browser": "out/extension.web.js",
+	"files": [
+		"out"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/microsoft/vscode-js-profile-visualizer.git"
+	},
+	"capabilities": {
+		"virtualWorkspaces": true,
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
+	"publisher": "ms-vscode",
+	"sideEffects": false,
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"scripts": {
+		"pack": "vsce package --yarn",
+		"compile": "rimraf out && webpack --mode production",
+		"watch": "webpack --mode development --watch"
+	},
+	"icon": "resources/logo.png",
+	"activationEvents": [
+		"onCommand:jsProfileVisualizer.heapsnapshot.flame.show",
+		"onWebviewPanel:jsProfileVisualizer.heapsnapshot.flame.show"
+	],
+	"contributes": {
+		"customEditors": [
+			{
+				"viewType": "jsProfileVisualizer.cpuprofile.flame",
+				"displayName": "CPU Profile Flame Graph Visualizer",
+				"priority": "option",
+				"selector": [
+					{
+						"filenamePattern": "*.cpuprofile"
+					}
+				]
+			},
+			{
+				"viewType": "jsProfileVisualizer.heapprofile.flame",
+				"displayName": "Heap Profile Flame Graph Visualizer",
+				"priority": "option",
+				"selector": [
+					{
+						"filenamePattern": "*.heapprofile"
+					}
+				]
+			}
+		],
+		"views": {
+			"debug": [
+				{
+					"type": "webview",
+					"id": "vscode-js-profile-flame.realtime",
+					"name": "Realtime Performance",
+					"when": "debugType =~ /^pwa-/ || debugType == node-terminal"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "vscode-js-profile-flame.setRealtimeCharts",
+					"when": "view == vscode-js-profile-flame.realtime",
+					"group": "navigation@1"
+				},
+				{
+					"command": "vscode-js-profile-flame.collapseCharts",
+					"when": "view == vscode-js-profile-flame.realtime && vscodeJsProfileFlameSplitCharts",
+					"group": "navigation@1"
+				},
+				{
+					"command": "vscode-js-profile-flame.splitCharts",
+					"when": "view == vscode-js-profile-flame.realtime && !vscodeJsProfileFlameSplitCharts",
+					"group": "navigation@1"
+				},
+				{
+					"command": "extension.js-debug.startProfile",
+					"when": "view == vscode-js-profile-flame.realtime",
+					"group": "navigation@1"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "vscode-js-profile-flame.collapseCharts",
+					"when": "debugType =~ /^pwa-/ && vscodeJsProfileFlameSplitCharts"
+				},
+				{
+					"command": "vscode-js-profile-flame.splitCharts",
+					"when": "debugType =~ /^pwa-/ && !vscodeJsProfileFlameSplitCharts"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "vscode-js-profile-flame.setRealtimeCharts",
+				"category": "Debug",
+				"title": "Toggle Visible Realtime Performance Charts",
+				"icon": "$(gear)"
+			},
+			{
+				"command": "vscode-js-profile-flame.collapseCharts",
+				"category": "Debug",
+				"title": "Collapse to Realtime Metrics Single Chart",
+				"icon": "$(collapse-all)"
+			},
+			{
+				"command": "vscode-js-profile-flame.splitCharts",
+				"category": "Debug",
+				"title": "Split Realtime Metrics to Separate Charts",
+				"icon": "$(expand-all)"
+			}
+		],
+		"configuration": [
+			{
+				"title": "Flamegraph Visualizer",
+				"properties": {
+					"debug.flameGraph.realtimePollInterval": {
+						"type": "integer",
+						"minimum": 0.5,
+						"maximum": 3600,
+						"default": 1,
+						"description": "How often (in seconds) to refresh statistics from the runtime."
+					},
+					"debug.flameGraph.realtimeViewDuration": {
+						"type": "integer",
+						"minimum": 1,
+						"default": 30,
+						"description": "How much time (in seconds) should be kept in the graph."
+					},
+					"debug.flameGraph.realtimeEasing": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether easing is enable on the realtime graph."
+					}
+				}
+			}
+		]
+	},
+	"bugs": {
+		"url": "https://github.com/microsoft/vscode-js-profile-visualizer/issues"
+	},
+	"devDependencies": {
+		"@types/chroma-js": "^2.4.3",
+		"@types/cytoscape": "^3.19.15",
+		"@types/resize-observer-browser": "^0.1.7"
+	},
+	"dependencies": {
+		"@vscode/codicons": "^0.0.35",
+		"chroma-js": "^2.4.2",
+		"cytoscape": "^3.27.0",
+		"cytoscape-klay": "^3.1.4",
+		"vscode-js-profile-core": "*",
+		"vscode-webview-tools": "^0.1.1"
+	},
+	"__metadata": {
+		"id": "76169c6c-5d43-4560-93d8-95e15125880d",
+		"publisherId": "5f5636e7-69ed-4afe-b5d6-8d231fb3d3ee",
+		"publisherDisplayName": "Microsoft",
+		"targetPlatform": "undefined",
+		"isApplicationScoped": false,
+		"isPreReleaseVersion": false,
+		"hasPreReleaseVersion": false,
+		"installedTimestamp": 1717158095149,
+		"pinned": false,
+		"preRelease": false,
+		"source": "gallery"
+	}
+}
