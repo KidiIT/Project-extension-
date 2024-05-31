@@ -1,0 +1,127 @@
+{
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer"
+    },
+    "databases": {
+      "type": "object",
+      "properties": {
+        "variantAnalysis": {
+          "type": "object",
+          "properties": {
+            "repositoryLists": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "repositories": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9-_\\.]+/[a-zA-Z0-9-_\\.]+$"
+                    }
+                  }
+                },
+                "required": ["name", "repositories"],
+                "additionalProperties": false
+              }
+            },
+            "owners": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_\\.]+$"
+              }
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9-_\\.]+/[a-zA-Z0-9-_\\.]+$"
+              }
+            }
+          },
+          "required": ["repositoryLists", "owners", "repositories"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["variantAnalysis"],
+      "additionalProperties": false
+    },
+    "selected": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["variantAnalysisSystemDefinedList"]
+            },
+            "listName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["kind", "listName"],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["variantAnalysisUserDefinedList"]
+            },
+            "listName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["kind", "listName"],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["variantAnalysisOwner"]
+            },
+            "ownerName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["kind", "ownerName"],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["variantAnalysisRepository"]
+            },
+            "repositoryName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "listName": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["kind", "repositoryName"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": ["databases", "version"],
+  "additionalProperties": false
+}

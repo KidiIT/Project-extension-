@@ -1,0 +1,2124 @@
+{
+	"name": "vscode-codeql",
+	"displayName": "CodeQL",
+	"description": "CodeQL for Visual Studio Code",
+	"author": "GitHub",
+	"private": true,
+	"version": "1.13.1",
+	"publisher": "GitHub",
+	"license": "MIT",
+	"icon": "media/VS-marketplace-CodeQL-icon.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/github/vscode-codeql"
+	},
+	"engines": {
+		"vscode": "^1.82.0",
+		"node": "^18.18.2",
+		"npm": ">=7.20.6"
+	},
+	"categories": [
+		"Programming Languages"
+	],
+	"extensionDependencies": [
+		"vscode.git"
+	],
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": "limited",
+			"description": "Workspace trust is required to execute commands that can contain arbitrary paths.",
+			"restrictedConfigurations": [
+				"codeQL.cli.executablePath",
+				"codeQL.runningTests.additionalTestArguments"
+			]
+		}
+	},
+	"activationEvents": [
+		"onView:test-explorer",
+		"onWebviewPanel:resultsView",
+		"onWebviewPanel:codeQL.variantAnalysis",
+		"onWebviewPanel:codeQL.dataFlowPaths",
+		"onFileSystem:codeql-zip-archive",
+		"workspaceContains:.git"
+	],
+	"main": "./out/extension",
+	"files": [
+		"gen/*.js",
+		"media/**",
+		"out/**",
+		"package.json",
+		"language-configuration.json"
+	],
+	"contributes": {
+		"configurationDefaults": {
+			"[ql]": {
+				"debug.saveBeforeStart": "nonUntitledEditorsInActiveGroup",
+				"editor.wordBasedSuggestions": "off"
+			},
+			"[dbscheme]": {
+				"editor.wordBasedSuggestions": "off"
+			}
+		},
+		"debuggers": [
+			{
+				"type": "codeql",
+				"label": "CodeQL Debugger",
+				"languages": [
+					"ql"
+				],
+				"configurationAttributes": {
+					"launch": {
+						"properties": {
+							"query": {
+								"type": "string",
+								"description": "Path to query file (.ql)",
+								"default": "${file}"
+							},
+							"database": {
+								"type": "string",
+								"description": "Path to the target database"
+							},
+							"additionalPacks": {
+								"type": [
+									"array",
+									"string"
+								],
+								"description": "Additional folders to search for library packs. Defaults to searching all workspace folders."
+							},
+							"extensionPacks": {
+								"type": [
+									"array",
+									"string"
+								],
+								"description": "Names of extension packs to include in the evaluation. These are resolved from the locations specified in `additionalPacks`."
+							},
+							"additionalRunQueryArgs": {
+								"type": "object",
+								"description": "**Internal use only**. Additional arguments to pass to the `runQuery` command of the query server, without validation."
+							}
+						}
+					}
+				},
+				"variables": {
+					"currentDatabase": "codeQL.getCurrentDatabase",
+					"currentQuery": "codeQL.getCurrentQuery"
+				}
+			}
+		],
+		"jsonValidation": [
+			{
+				"fileMatch": "GitHub.vscode-codeql/databases.json",
+				"url": "./databases-schema.json"
+			}
+		],
+		"languages": [
+			{
+				"id": "ql",
+				"aliases": [
+					"QL",
+					"ql",
+					"CodeQL"
+				],
+				"extensions": [
+					".ql",
+					".qll"
+				],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "dbscheme",
+				"aliases": [
+					"DBScheme",
+					"dbscheme"
+				],
+				"extensions": [
+					".dbscheme"
+				],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "xml",
+				"extensions": [
+					".qhelp"
+				]
+			},
+			{
+				"id": "ql-summary",
+				"filenames": [
+					"evaluator-log.summary"
+				]
+			}
+		],
+		"grammars": [
+			{
+				"language": "ql",
+				"scopeName": "source.ql",
+				"path": "./out/syntaxes/ql.tmLanguage.json"
+			},
+			{
+				"language": "dbscheme",
+				"scopeName": "source.dbscheme",
+				"path": "./out/syntaxes/dbscheme.tmLanguage.json"
+			}
+		],
+		"snippets": [
+			{
+				"language": "ql",
+				"path": "./snippets.json"
+			}
+		],
+		"configuration": [
+			{
+				"type": "object",
+				"title": "CLI",
+				"order": 0,
+				"properties": {
+					"codeQL.cli.executablePath": {
+						"scope": "machine-overridable",
+						"type": "string",
+						"default": "",
+						"markdownDescription": "Path to the CodeQL executable that should be used by the CodeQL extension. The executable is named `codeql` on Linux/Mac and `codeql.exe` on Windows. If empty, the extension will look for a CodeQL executable on your shell PATH, or if CodeQL is not on your PATH, download and manage its own CodeQL executable (note: if you later introduce CodeQL on your PATH, the extension will prefer a CodeQL executable it has downloaded itself)."
+					},
+					"codeQL.cli.downloadTimeout": {
+						"type": "integer",
+						"default": 10,
+						"description": "Download timeout in seconds for downloading the CLI distribution."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Running queries",
+				"order": 1,
+				"properties": {
+					"codeQL.runningQueries.numberOfThreads": {
+						"type": "integer",
+						"default": 1,
+						"minimum": 0,
+						"maximum": 1024,
+						"description": "Number of threads for running queries."
+					},
+					"codeQL.runningQueries.saveCache": {
+						"type": "boolean",
+						"default": false,
+						"scope": "window",
+						"description": "Aggressively save intermediate results to the disk cache. This may speed up subsequent queries if they are similar. Be aware that using this option will greatly increase disk usage and initial evaluation time."
+					},
+					"codeQL.runningQueries.cacheSize": {
+						"type": [
+							"integer",
+							"null"
+						],
+						"default": null,
+						"minimum": 1024,
+						"description": "Maximum size of the disk cache (in MB). Leave blank to allow the evaluator to automatically adjust the size of the disk cache based on the size of the codebase and the complexity of the queries being executed."
+					},
+					"codeQL.runningQueries.timeout": {
+						"type": [
+							"integer",
+							"null"
+						],
+						"default": null,
+						"minimum": 0,
+						"maximum": 2147483647,
+						"description": "Timeout (in seconds) for running queries. Leave blank or set to zero for no timeout."
+					},
+					"codeQL.runningQueries.memory": {
+						"type": [
+							"integer",
+							"null"
+						],
+						"default": null,
+						"minimum": 1024,
+						"description": "Memory (in MB) to use for running queries. Leave blank for CodeQL to choose a suitable value based on your system's available memory."
+					},
+					"codeQL.runningQueries.debug": {
+						"type": "boolean",
+						"default": false,
+						"description": "Enable debug logging and tuple counting when running CodeQL queries. This information is useful for debugging query performance."
+					},
+					"codeQL.runningQueries.maxPaths": {
+						"type": "integer",
+						"default": 4,
+						"minimum": 1,
+						"maximum": 256,
+						"markdownDescription": "Max number of paths to display for each alert found by a path query (`@kind path-problem`)."
+					},
+					"codeQL.runningQueries.autoSave": {
+						"type": "boolean",
+						"description": "Enable automatically saving a modified query file when running a query.",
+						"markdownDeprecationMessage": "This property is deprecated and no longer has any effect. To control automatic saving of documents before running queries, use the `debug.saveBeforeStart` setting."
+					},
+					"codeQL.runningQueries.maxQueries": {
+						"type": "integer",
+						"default": 20,
+						"description": "Max number of simultaneous queries to run using the 'CodeQL: Run Queries' command."
+					},
+					"codeQL.runningQueries.customLogDirectory": {
+						"type": [
+							"string",
+							null
+						],
+						"default": null,
+						"description": "Path to a directory where the CodeQL extension should store query server logs. If empty, the extension stores logs in a temporary workspace folder and deletes the contents after each run.",
+						"markdownDeprecationMessage": "This property is deprecated and no longer has any effect. All query logs are stored in the query history folder next to the query results."
+					},
+					"codeQL.runningQueries.quickEvalCodelens": {
+						"type": "boolean",
+						"default": true,
+						"description": "Enable the 'Quick Evaluation' CodeLens."
+					},
+					"codeQL.runningQueries.useExtensionPacks": {
+						"type": "string",
+						"default": "none",
+						"enum": [
+							"none",
+							"all"
+						],
+						"enumDescriptions": [
+							"Do not use extension packs.",
+							"Use all extension packs found in the workspace."
+						],
+						"description": "Choose whether or not to run queries using extension packs. Requires CodeQL CLI v2.12.3 or later."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Results",
+				"order": 2,
+				"properties": {
+					"codeQL.resultsDisplay.pageSize": {
+						"type": "integer",
+						"default": 200,
+						"description": "Max number of query results to display per page in the results view."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Query history",
+				"order": 3,
+				"properties": {
+					"codeQL.queryHistory.format": {
+						"type": "string",
+						"default": "%q on %d - %s %r [%t]",
+						"markdownDescription": "Default string for how to label query history items.\n* %t is the time of the query\n* %q is the human-readable query name\n* %f is the query file name\n* %d is the database name\n* %r is the number of results\n* %s is a status string"
+					},
+					"codeQL.queryHistory.ttl": {
+						"type": "number",
+						"default": 30,
+						"description": "Number of days to retain queries in the query history before being automatically deleted.",
+						"scope": "machine"
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Running tests",
+				"order": 4,
+				"properties": {
+					"codeQL.runningTests.additionalTestArguments": {
+						"scope": "window",
+						"type": "array",
+						"default": [],
+						"markdownDescription": "Additional command line arguments to pass to the CLI when [running tests](https://codeql.github.com/docs/codeql-cli/manual/test-run/). This setting should be an array of strings, each containing an argument to be passed."
+					},
+					"codeQL.runningTests.numberOfThreads": {
+						"scope": "window",
+						"type": "integer",
+						"default": 1,
+						"minimum": 0,
+						"maximum": 1024,
+						"description": "Number of threads for running CodeQL tests."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Variant analysis",
+				"order": 5,
+				"properties": {
+					"codeQL.variantAnalysis.controllerRepo": {
+						"type": "string",
+						"default": "",
+						"pattern": "^$|^(?:[a-zA-Z0-9]+-)*[a-zA-Z0-9]+/[a-zA-Z0-9-_]+$",
+						"patternErrorMessage": "Please enter a valid GitHub repository",
+						"markdownDescription": "[For internal use only] The name of the GitHub repository in which the GitHub Actions workflow is run when using the \"Run Variant Analysis\" command. The repository should be of the form `<owner>/<repo>`)."
+					},
+					"codeQL.variantAnalysis.defaultResultsFilter": {
+						"type": "string",
+						"default": "all",
+						"enum": [
+							"all",
+							"withResults"
+						],
+						"enumDescriptions": [
+							"Show all repositories in the results view.",
+							"Show only repositories with results in the results view."
+						],
+						"description": "The default filter to apply to the variant analysis results view."
+					},
+					"codeQL.variantAnalysis.defaultResultsSort": {
+						"type": "string",
+						"default": "numberOfResults",
+						"enum": [
+							"alphabetically",
+							"popularity",
+							"numberOfResults"
+						],
+						"enumDescriptions": [
+							"Sort repositories alphabetically in the results view.",
+							"Sort repositories by popularity in the results view.",
+							"Sort repositories by number of results in the results view."
+						],
+						"description": "The default sorting order for repositories in the variant analysis results view."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Adding databases",
+				"order": 6,
+				"properties": {
+					"codeQL.addingDatabases.downloadTimeout": {
+						"type": "integer",
+						"default": 10,
+						"description": "Download timeout in seconds for adding a CodeQL database."
+					},
+					"codeQL.addingDatabases.allowHttp": {
+						"type": "boolean",
+						"default": false,
+						"description": "Allow databases to be downloaded via HTTP. Warning: enabling this option will allow downloading from insecure servers."
+					},
+					"codeQL.databaseDownload.allowHttp": {
+						"type": "boolean",
+						"markdownDeprecationMessage": "**Deprecated**: Please use `#codeQL.addingDatabases.allowHttp#` instead.",
+						"deprecationMessage": "Deprecated: Please use codeQL.addingDatabases.allowHttp instead."
+					},
+					"codeQL.addingDatabases.addDatabaseSourceToWorkspace": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "When adding a CodeQL database, automatically add the database's source folder as a workspace folder. Warning: enabling this option in a single-folder workspace will cause the workspace to reload as a [multi-root workspace](https://code.visualstudio.com/docs/editor/multi-root-workspaces). This may cause query history and database lists to be reset."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Creating queries",
+				"order": 7,
+				"properties": {
+					"codeQL.createQuery.qlPackLocation": {
+						"type": "string",
+						"patternErrorMessage": "Please enter a valid folder",
+						"markdownDescription": "The name of the folder where we want to create queries and QL packs via the \"CodeQL: Create Query\" command. The folder should exist."
+					},
+					"codeQL.createQuery.autogenerateQlPacks": {
+						"type": "string",
+						"default": "ask",
+						"enum": [
+							"ask",
+							"never"
+						],
+						"enumDescriptions": [
+							"Ask to create a QL pack when a new CodeQL database is added.",
+							"Never create a QL pack when a new CodeQL database is added."
+						],
+						"description": "Ask the user to generate a QL pack when a new CodeQL database is downloaded."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "GitHub Databases",
+				"order": 8,
+				"properties": {
+					"codeQL.githubDatabase.download": {
+						"type": "string",
+						"default": "ask",
+						"enum": [
+							"ask",
+							"never"
+						],
+						"enumDescriptions": [
+							"Ask to download a GitHub database when a workspace is opened.",
+							"Never download a GitHub databases when a workspace is opened."
+						],
+						"description": "Ask to download a GitHub database when a workspace is opened."
+					},
+					"codeQL.githubDatabase.update": {
+						"type": "string",
+						"default": "ask",
+						"enum": [
+							"ask",
+							"never"
+						],
+						"enumDescriptions": [
+							"Ask to download an updated GitHub database when a new version is available.",
+							"Never download an updated GitHub database when a new version is available."
+						],
+						"description": "Ask to download an updated GitHub database when a new version is available."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Model Editor",
+				"order": 9,
+				"properties": {
+					"codeQL.model.packLocation": {
+						"type": "string",
+						"default": ".github/codeql/extensions/${name}-${language}",
+						"markdownDescription": "Location for newly created CodeQL model packs. The location can be either absolute or relative. If relative, it is relative to the workspace root.\n\nThe following variables are supported:\n* **${database}** - the name of the database\n* **${language}** - the name of the language\n* **${name}** - the name of the GitHub repository, or the name of the database if the database was not downloaded from GitHub\n* **${owner}** - the owner of the GitHub repository, or an empty string if the database was not downloaded from GitHub"
+					},
+					"codeQL.model.packName": {
+						"type": "string",
+						"default": "${owner}/${name}-${language}",
+						"markdownDescription": "Name of newly created CodeQL model packs. If the result is not a valid pack name, it will be converted to a valid pack name.\n\nThe following variables are supported:\n* **${database}** - the name of the database\n* **${language}** - the name of the language\n* **${name}** - the name of the GitHub repository, or the name of the database if the database was not downloaded from GitHub\n* **${owner}** - the owner of the GitHub repository, or an empty string if the database was not downloaded from GitHub"
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Log insights",
+				"order": 10,
+				"properties": {
+					"codeQL.logInsights.joinOrderWarningThreshold": {
+						"type": "number",
+						"default": 50,
+						"scope": "window",
+						"minimum": 0,
+						"description": "Report a warning for any join order whose metric exceeds this value."
+					}
+				}
+			},
+			{
+				"type": "object",
+				"title": "Telemetry",
+				"order": 11,
+				"properties": {
+					"codeQL.telemetry.enableTelemetry": {
+						"type": "boolean",
+						"default": false,
+						"scope": "application",
+						"markdownDescription": "Specifies whether to send CodeQL usage telemetry. This setting AND the one of the global telemetry settings (`#telemetry.enableTelemetry#` or `#telemetry.telemetryLevel#`) must be enabled for telemetry to be sent to GitHub. For more information, see the [telemetry documentation](https://codeql.github.com/docs/codeql-for-visual-studio-code/about-telemetry-in-codeql-for-visual-studio-code)",
+						"tags": [
+							"telemetry",
+							"usesOnlineServices"
+						]
+					},
+					"codeQL.telemetry.logTelemetry": {
+						"type": "boolean",
+						"default": false,
+						"scope": "application",
+						"description": "Specifies whether or not to write telemetry events to the extension log.",
+						"tags": [
+							"telemetry"
+						]
+					}
+				}
+			}
+		],
+		"commands": [
+			{
+				"command": "codeQL.authenticateToGitHub",
+				"title": "CodeQL: Authenticate to GitHub"
+			},
+			{
+				"command": "codeQL.runQuery",
+				"title": "CodeQL: Run Query on Selected Database"
+			},
+			{
+				"command": "codeQL.runQueryContextEditor",
+				"title": "CodeQL: Run Query on Selected Database"
+			},
+			{
+				"command": "codeQL.debugQuery",
+				"title": "CodeQL: Debug Query"
+			},
+			{
+				"command": "codeQL.debugQueryContextEditor",
+				"title": "CodeQL: Debug Query"
+			},
+			{
+				"command": "codeQL.startDebuggingSelection",
+				"title": "CodeQL: Debug Selection"
+			},
+			{
+				"command": "codeQL.startDebuggingSelectionContextEditor",
+				"title": "CodeQL: Debug Selection"
+			},
+			{
+				"command": "codeQL.continueDebuggingSelection",
+				"title": "CodeQL: Debug Selection"
+			},
+			{
+				"command": "codeQL.continueDebuggingSelectionContextEditor",
+				"title": "CodeQL: Debug Selection"
+			},
+			{
+				"command": "codeQL.runQueryOnMultipleDatabases",
+				"title": "CodeQL: Run Query on Multiple Databases"
+			},
+			{
+				"command": "codeQL.runQueryOnMultipleDatabasesContextEditor",
+				"title": "CodeQL: Run Query on Multiple Databases"
+			},
+			{
+				"command": "codeQL.runVariantAnalysis",
+				"title": "CodeQL: Run Variant Analysis"
+			},
+			{
+				"command": "codeQL.runVariantAnalysisContextEditor",
+				"title": "CodeQL: Run Variant Analysis"
+			},
+			{
+				"command": "codeQL.runVariantAnalysisContextExplorer",
+				"title": "CodeQL: Run Variant Analysis"
+			},
+			{
+				"command": "codeQL.runVariantAnalysisPublishedPack",
+				"title": "CodeQL: Run Variant Analysis against published pack"
+			},
+			{
+				"command": "codeQL.exportSelectedVariantAnalysisResults",
+				"title": "CodeQL: Export Variant Analysis Results"
+			},
+			{
+				"command": "codeQL.runQueries",
+				"title": "CodeQL: Run Queries in Selected Files"
+			},
+			{
+				"command": "codeQL.quickEval",
+				"title": "CodeQL: Quick Evaluation"
+			},
+			{
+				"command": "codeQL.quickEvalCount",
+				"title": "CodeQL: Quick Evaluation Count"
+			},
+			{
+				"command": "codeQL.quickEvalContextEditor",
+				"title": "CodeQL: Quick Evaluation"
+			},
+			{
+				"command": "codeQL.openReferencedFile",
+				"title": "CodeQL: Open Referenced File"
+			},
+			{
+				"command": "codeQL.openReferencedFileContextEditor",
+				"title": "CodeQL: Open Referenced File"
+			},
+			{
+				"command": "codeQL.openReferencedFileContextExplorer",
+				"title": "CodeQL: Open Referenced File"
+			},
+			{
+				"command": "codeQL.previewQueryHelp",
+				"title": "CodeQL: Preview Query Help"
+			},
+			{
+				"command": "codeQL.previewQueryHelpContextExplorer",
+				"title": "CodeQL: Preview Query Help"
+			},
+			{
+				"command": "codeQL.previewQueryHelpContextEditor",
+				"title": "CodeQL: Preview Query Help"
+			},
+			{
+				"command": "codeQL.quickQuery",
+				"title": "CodeQL: Quick Query"
+			},
+			{
+				"command": "codeQL.createQuery",
+				"title": "CodeQL: Create Query"
+			},
+			{
+				"command": "codeQL.openDocumentation",
+				"title": "CodeQL: Open Documentation"
+			},
+			{
+				"command": "codeQL.copyVersion",
+				"title": "CodeQL: Copy Version Information"
+			},
+			{
+				"command": "codeQLLanguageSelection.setSelectedItem",
+				"title": "Select"
+			},
+			{
+				"command": "codeQLQueries.runLocalQueryFromQueriesPanel",
+				"title": "Run local query",
+				"icon": "$(run)"
+			},
+			{
+				"command": "codeQLQueries.runLocalQueriesFromPanel",
+				"title": "Run local queries",
+				"icon": "$(run-all)"
+			},
+			{
+				"command": "codeQL.runLocalQueryFromFileTab",
+				"title": "CodeQL: Run local query",
+				"icon": "$(run)"
+			},
+			{
+				"command": "codeQLQueries.runLocalQueryContextMenu",
+				"title": "Run against local database"
+			},
+			{
+				"command": "codeQLQueries.runLocalQueriesContextMenu",
+				"title": "Run against local database"
+			},
+			{
+				"command": "codeQLQueries.runVariantAnalysisContextMenu",
+				"title": "Run against variant analysis repositories"
+			},
+			{
+				"command": "codeQLQueries.createQuery",
+				"title": "Create query",
+				"icon": "$(new-file)"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.openConfigFile",
+				"title": "Open database configuration file",
+				"icon": "$(json)"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.addNewDatabase",
+				"title": "Add new database",
+				"icon": "$(add)"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.addNewList",
+				"title": "Add new list",
+				"icon": "$(new-folder)"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.importFromCodeSearch",
+				"title": "Add repositories with GitHub Code Search"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.setSelectedItem",
+				"title": "Select"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.setSelectedItemContextMenu",
+				"title": "Select"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.renameItemContextMenu",
+				"title": "Rename"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.openOnGitHubContextMenu",
+				"title": "Open on GitHub"
+			},
+			{
+				"command": "codeQLVariantAnalysisRepositories.removeItemContextMenu",
+				"title": "Delete"
+			},
+			{
+				"command": "codeQLDatabases.chooseDatabaseFolder",
+				"title": "Choose Database from Folder",
+				"icon": {
+					"light": "media/light/folder-opened-plus.svg",
+					"dark": "media/dark/folder-opened-plus.svg"
+				}
+			},
+			{
+				"command": "codeQLDatabases.removeOrphanedDatabases",
+				"title": "Delete unused databases"
+			},
+			{
+				"command": "codeQLDatabases.chooseDatabaseArchive",
+				"title": "Choose Database from Archive",
+				"icon": {
+					"light": "media/light/archive-plus.svg",
+					"dark": "media/dark/archive-plus.svg"
+				}
+			},
+			{
+				"command": "codeQLDatabases.chooseDatabaseInternet",
+				"title": "Download Database",
+				"icon": {
+					"light": "media/light/cloud-download.svg",
+					"dark": "media/dark/cloud-download.svg"
+				}
+			},
+			{
+				"command": "codeQLDatabases.chooseDatabaseGithub",
+				"title": "Download Database from GitHub",
+				"icon": {
+					"light": "media/light/github.svg",
+					"dark": "media/dark/github.svg"
+				}
+			},
+			{
+				"command": "codeQL.setCurrentDatabase",
+				"title": "CodeQL: Set Current Database"
+			},
+			{
+				"command": "codeQL.importTestDatabase",
+				"title": "CodeQL: (Re-)Import Test Database"
+			},
+			{
+				"command": "codeQL.getCurrentDatabase",
+				"title": "CodeQL: Get Current Database"
+			},
+			{
+				"command": "codeQL.getCurrentQuery",
+				"title": "CodeQL: Get Current Query"
+			},
+			{
+				"command": "codeQL.viewAst",
+				"title": "CodeQL: View AST"
+			},
+			{
+				"command": "codeQL.viewAstContextExplorer",
+				"title": "CodeQL: View AST"
+			},
+			{
+				"command": "codeQL.viewAstContextEditor",
+				"title": "CodeQL: View AST"
+			},
+			{
+				"command": "codeQL.viewCfg",
+				"title": "CodeQL: View CFG"
+			},
+			{
+				"command": "codeQL.viewCfgContextExplorer",
+				"title": "CodeQL: View CFG"
+			},
+			{
+				"command": "codeQL.viewCfgContextEditor",
+				"title": "CodeQL: View CFG"
+			},
+			{
+				"command": "codeQL.upgradeCurrentDatabase",
+				"title": "CodeQL: Upgrade Current Database"
+			},
+			{
+				"command": "codeQL.clearCache",
+				"title": "CodeQL: Clear Cache"
+			},
+			{
+				"command": "codeQL.trimCache",
+				"title": "CodeQL: Trim Cache"
+			},
+			{
+				"command": "codeQL.installPackDependencies",
+				"title": "CodeQL: Install Pack Dependencies"
+			},
+			{
+				"command": "codeQL.downloadPacks",
+				"title": "CodeQL: Download Packs"
+			},
+			{
+				"command": "codeQLDatabases.setCurrentDatabase",
+				"title": "Select"
+			},
+			{
+				"command": "codeQLDatabases.removeDatabase",
+				"title": "Remove Database"
+			},
+			{
+				"command": "codeQLDatabases.upgradeDatabase",
+				"title": "Upgrade Database"
+			},
+			{
+				"command": "codeQLDatabases.renameDatabase",
+				"title": "Rename Database"
+			},
+			{
+				"command": "codeQLDatabases.openDatabaseFolder",
+				"title": "Show Database Directory"
+			},
+			{
+				"command": "codeQLDatabases.addDatabaseSource",
+				"title": "Add Database Source to Workspace"
+			},
+			{
+				"command": "codeQL.chooseDatabaseFolder",
+				"title": "CodeQL: Choose Database from Folder"
+			},
+			{
+				"command": "codeQL.chooseDatabaseArchive",
+				"title": "CodeQL: Choose Database from Archive"
+			},
+			{
+				"command": "codeQL.chooseDatabaseInternet",
+				"title": "CodeQL: Download Database"
+			},
+			{
+				"command": "codeQL.chooseDatabaseGithub",
+				"title": "CodeQL: Download Database from GitHub"
+			},
+			{
+				"command": "codeQLDatabases.sortByName",
+				"title": "Sort by Name"
+			},
+			{
+				"command": "codeQLDatabases.sortByLanguage",
+				"title": "Sort by Language"
+			},
+			{
+				"command": "codeQLDatabases.sortByDateAdded",
+				"title": "Sort by Date Added"
+			},
+			{
+				"command": "codeQL.checkForUpdatesToCLI",
+				"title": "CodeQL: Check for CLI Updates"
+			},
+			{
+				"command": "codeQLQueryHistory.openQueryContextMenu",
+				"title": "View Query",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "codeQLQueryHistory.itemClicked",
+				"title": "Open Query Results",
+				"icon": "$(preview)"
+			},
+			{
+				"command": "codeQLQueryHistory.removeHistoryItemContextMenu",
+				"title": "Delete",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "codeQLQueryHistory.removeHistoryItemContextInline",
+				"title": "Delete",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "codeQLQueryHistory.sortByName",
+				"title": "Sort by Name"
+			},
+			{
+				"command": "codeQLQueryHistory.sortByDate",
+				"title": "Sort by Date"
+			},
+			{
+				"command": "codeQLQueryHistory.sortByCount",
+				"title": "Sort by Results Count"
+			},
+			{
+				"command": "codeQLQueryHistory.showQueryLog",
+				"title": "View Query Log"
+			},
+			{
+				"command": "codeQLQueryHistory.openQueryDirectory",
+				"title": "Open Results Directory"
+			},
+			{
+				"command": "codeQLQueryHistory.showEvalLog",
+				"title": "Show Evaluator Log (Raw JSON)"
+			},
+			{
+				"command": "codeQLQueryHistory.showEvalLogSummary",
+				"title": "Show Evaluator Log (Summary Text)"
+			},
+			{
+				"command": "codeQLQueryHistory.showEvalLogViewer",
+				"title": "Show Evaluator Log (UI)"
+			},
+			{
+				"command": "codeQLQueryHistory.cancel",
+				"title": "Cancel"
+			},
+			{
+				"command": "codeQLQueryHistory.showQueryText",
+				"title": "View Query Text"
+			},
+			{
+				"command": "codeQLQueryHistory.exportResults",
+				"title": "Export Results"
+			},
+			{
+				"command": "codeQLQueryHistory.viewCsvResults",
+				"title": "View Results (CSV)"
+			},
+			{
+				"command": "codeQLQueryHistory.viewCsvAlerts",
+				"title": "View Alerts (CSV)"
+			},
+			{
+				"command": "codeQLQueryHistory.viewSarifAlerts",
+				"title": "View Alerts (SARIF)"
+			},
+			{
+				"command": "codeQLQueryHistory.viewDil",
+				"title": "View DIL"
+			},
+			{
+				"command": "codeQLQueryHistory.renameItem",
+				"title": "Rename"
+			},
+			{
+				"command": "codeQLQueryHistory.compareWith",
+				"title": "Compare Results"
+			},
+			{
+				"command": "codeQLQueryHistory.openOnGithub",
+				"title": "View Logs"
+			},
+			{
+				"command": "codeQLQueryHistory.copyRepoList",
+				"title": "Copy Repository List"
+			},
+			{
+				"command": "codeQLQueryResults.down",
+				"title": "CodeQL: Navigate Down in Local Result Viewer"
+			},
+			{
+				"command": "codeQLQueryResults.up",
+				"title": "CodeQL: Navigate Up in Local Result Viewer"
+			},
+			{
+				"command": "codeQLQueryResults.right",
+				"title": "CodeQL: Navigate Right in Local Result Viewer"
+			},
+			{
+				"command": "codeQLQueryResults.left",
+				"title": "CodeQL: Navigate Left in Local Result Viewer"
+			},
+			{
+				"command": "codeQL.restartQueryServer",
+				"title": "CodeQL: Restart Query Server"
+			},
+			{
+				"command": "codeQLTests.showOutputDifferences",
+				"title": "Show Test Output Differences"
+			},
+			{
+				"command": "codeQLTests.acceptOutput",
+				"title": "Accept Test Output"
+			},
+			{
+				"command": "codeQLTests.acceptOutputContextTestItem",
+				"title": "Accept Test Output"
+			},
+			{
+				"command": "codeQLAstViewer.gotoCode",
+				"title": "Go To Code"
+			},
+			{
+				"command": "codeQLAstViewer.clear",
+				"title": "Clear AST",
+				"icon": {
+					"light": "media/light/clear-all.svg",
+					"dark": "media/dark/clear-all.svg"
+				}
+			},
+			{
+				"command": "codeQLEvalLogViewer.clear",
+				"title": "Clear Viewer",
+				"icon": {
+					"light": "media/light/clear-all.svg",
+					"dark": "media/dark/clear-all.svg"
+				}
+			},
+			{
+				"command": "codeQL.gotoQL",
+				"title": "CodeQL: Go to QL Code",
+				"enablement": "codeql.hasQLSource"
+			},
+			{
+				"command": "codeQL.gotoQLContextEditor",
+				"title": "CodeQL: Go to QL Code",
+				"enablement": "codeql.hasQLSource"
+			},
+			{
+				"command": "codeQL.openModelEditor",
+				"title": "CodeQL: Open CodeQL Model Editor (Beta)"
+			},
+			{
+				"command": "codeQL.mockGitHubApiServer.startRecording",
+				"title": "CodeQL: Mock GitHub API Server: Start Scenario Recording"
+			},
+			{
+				"command": "codeQL.mockGitHubApiServer.saveScenario",
+				"title": "CodeQL: Mock GitHub API Server: Save Scenario"
+			},
+			{
+				"command": "codeQL.mockGitHubApiServer.cancelRecording",
+				"title": "CodeQL: Mock GitHub API Server: Cancel Scenario Recording"
+			},
+			{
+				"command": "codeQL.mockGitHubApiServer.loadScenario",
+				"title": "CodeQL: Mock GitHub API Server: Load Scenario"
+			},
+			{
+				"command": "codeQL.mockGitHubApiServer.unloadScenario",
+				"title": "CodeQL: Mock GitHub API Server: Unload Scenario"
+			}
+		],
+		"menus": {
+			"editor/title": [
+				{
+					"command": "codeQL.runLocalQueryFromFileTab",
+					"group": "navigation",
+					"when": "resourceExtname == .ql && codeQL.currentDatabaseItem"
+				}
+			],
+			"view/title": [
+				{
+					"command": "codeQLDatabases.chooseDatabaseFolder",
+					"when": "view == codeQLDatabases",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseArchive",
+					"when": "view == codeQLDatabases",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseInternet",
+					"when": "view == codeQLDatabases",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseGithub",
+					"when": "view == codeQLDatabases",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLDatabases.sortByName",
+					"when": "view == codeQLDatabases",
+					"group": "1_databases@0"
+				},
+				{
+					"command": "codeQLDatabases.sortByLanguage",
+					"when": "view == codeQLDatabases",
+					"group": "1_databases@1"
+				},
+				{
+					"command": "codeQLDatabases.sortByDateAdded",
+					"when": "view == codeQLDatabases",
+					"group": "1_databases@2"
+				},
+				{
+					"command": "codeQLQueries.createQuery",
+					"when": "view == codeQLQueries",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByName",
+					"when": "view == codeQLQueryHistory",
+					"group": "1_queryHistory@0"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByDate",
+					"when": "view == codeQLQueryHistory",
+					"group": "1_queryHistory@1"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByCount",
+					"when": "view == codeQLQueryHistory",
+					"group": "1_queryHistory@2"
+				},
+				{
+					"command": "codeQLAstViewer.clear",
+					"when": "view == codeQLAstViewer",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLEvalLogViewer.clear",
+					"when": "view == codeQLEvalLogViewer",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.openConfigFile",
+					"when": "view == codeQLVariantAnalysisRepositories",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.addNewDatabase",
+					"when": "view == codeQLVariantAnalysisRepositories && codeQLVariantAnalysisRepositories.configError == false",
+					"group": "navigation"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.addNewList",
+					"when": "view == codeQLVariantAnalysisRepositories && codeQLVariantAnalysisRepositories.configError == false",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "codeQLVariantAnalysisRepositories.removeItemContextMenu",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canBeRemoved/",
+					"group": "2_qlContextMenu@3"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.setSelectedItemContextMenu",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canBeSelected/",
+					"group": "1_qlContextMenu@1"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.renameItemContextMenu",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canBeRenamed/",
+					"group": "2_qlContextMenu@2"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.openOnGitHubContextMenu",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canBeOpenedOnGitHub/",
+					"group": "2_qlContextMenu@1"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.importFromCodeSearch",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canImportCodeSearch/",
+					"group": "2_qlContextMenu@1"
+				},
+				{
+					"command": "codeQLLanguageSelection.setSelectedItem",
+					"when": "view == codeQLLanguageSelection && viewItem =~ /canBeSelected/",
+					"group": "inline"
+				},
+				{
+					"command": "codeQLDatabases.setCurrentDatabase",
+					"group": "inline",
+					"when": "view == codeQLDatabases && viewItem != currentDatabase"
+				},
+				{
+					"command": "codeQLDatabases.removeDatabase",
+					"group": "9_qlCommands",
+					"when": "view == codeQLDatabases"
+				},
+				{
+					"command": "codeQLDatabases.renameDatabase",
+					"group": "9_qlCommands",
+					"when": "view == codeQLDatabases"
+				},
+				{
+					"command": "codeQLDatabases.openDatabaseFolder",
+					"group": "9_qlCommands",
+					"when": "view == codeQLDatabases"
+				},
+				{
+					"command": "codeQLDatabases.addDatabaseSource",
+					"group": "9_qlCommands",
+					"when": "view == codeQLDatabases"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.setSelectedItem",
+					"when": "view == codeQLVariantAnalysisRepositories && viewItem =~ /canBeSelected/",
+					"group": "inline"
+				},
+				{
+					"command": "codeQLQueryHistory.openQueryContextMenu",
+					"group": "2_queryHistory@0",
+					"when": "view == codeQLQueryHistory"
+				},
+				{
+					"command": "codeQLQueryHistory.removeHistoryItemContextMenu",
+					"group": "7_queryHistory@0",
+					"when": "viewItem == interpretedResultsItem || viewItem == rawResultsItem || viewItem == remoteResultsItem || viewItem == cancelledRemoteResultsItemWithoutLogs || viewItem == cancelledResultsItem || viewItem == cancelledRemoteResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.removeHistoryItemContextInline",
+					"group": "inline",
+					"when": "viewItem == interpretedResultsItem || viewItem == rawResultsItem || viewItem == remoteResultsItem || viewItem == cancelledRemoteResultsItemWithoutLogs || viewItem == cancelledResultsItem || viewItem == cancelledRemoteResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.renameItem",
+					"group": "6_queryHistory@0",
+					"when": "view == codeQLQueryHistory"
+				},
+				{
+					"command": "codeQLQueryHistory.compareWith",
+					"group": "3_queryHistory@0",
+					"when": "viewItem == rawResultsItem || viewItem == interpretedResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.showQueryLog",
+					"group": "4_queryHistory@4",
+					"when": "viewItem == rawResultsItem || viewItem == interpretedResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.openQueryDirectory",
+					"group": "2_queryHistory@4",
+					"when": "view == codeQLQueryHistory && !hasRemoteServer"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLog",
+					"group": "4_queryHistory@1",
+					"when": "viewItem == rawResultsItem || viewItem == interpretedResultsItem || viewItem == cancelledResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLogSummary",
+					"group": "4_queryHistory@2",
+					"when": "viewItem == rawResultsItem || viewItem == interpretedResultsItem || viewItem == cancelledResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLogViewer",
+					"group": "4_queryHistory@3",
+					"when": "config.codeQL.canary && viewItem == rawResultsItem || config.codeQL.canary && viewItem == interpretedResultsItem || config.codeQL.canary && viewItem == cancelledResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.showQueryText",
+					"group": "2_queryHistory@2",
+					"when": "view == codeQLQueryHistory"
+				},
+				{
+					"command": "codeQLQueryHistory.exportResults",
+					"group": "1_queryHistory@0",
+					"when": "view == codeQLQueryHistory && viewItem == remoteResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.viewCsvResults",
+					"group": "9_qlCommands",
+					"when": "viewItem == rawResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.viewCsvAlerts",
+					"group": "5_queryHistory@0",
+					"when": "viewItem == interpretedResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.viewSarifAlerts",
+					"group": "5_queryHistory@1",
+					"when": "viewItem == interpretedResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.viewDil",
+					"group": "5_queryHistory@2",
+					"when": "viewItem == rawResultsItem || viewItem == interpretedResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.cancel",
+					"group": "9_qlCommands",
+					"when": "viewItem == inProgressResultsItem || viewItem == inProgressRemoteResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.openOnGithub",
+					"group": "2_queryHistory@3",
+					"when": "viewItem == remoteResultsItem || viewItem == inProgressRemoteResultsItem || viewItem == cancelledRemoteResultsItem"
+				},
+				{
+					"command": "codeQLQueryHistory.copyRepoList",
+					"group": "1_queryHistory@1",
+					"when": "viewItem == remoteResultsItem"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueryFromQueriesPanel",
+					"group": "inline",
+					"when": "view == codeQLQueries && viewItem == queryFile && codeQL.currentDatabaseItem"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueryContextMenu",
+					"group": "queriesPanel@1",
+					"when": "view == codeQLQueries && viewItem == queryFile && codeQL.currentDatabaseItem"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueriesContextMenu",
+					"group": "queriesPanel@1",
+					"when": "view == codeQLQueries && viewItem == queryFolder && codeQL.currentDatabaseItem"
+				},
+				{
+					"command": "codeQLQueries.runVariantAnalysisContextMenu",
+					"group": "queriesPanel@1",
+					"when": "view == codeQLQueries && viewItem == queryFile"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueriesFromPanel",
+					"group": "inline",
+					"when": "view == codeQLQueries && viewItem == queryFolder && codeQL.currentDatabaseItem"
+				},
+				{
+					"command": "codeQLTests.showOutputDifferences",
+					"group": "qltest@1",
+					"when": "viewItem == testWithSource"
+				},
+				{
+					"command": "codeQLTests.acceptOutput",
+					"group": "qltest@2",
+					"when": "viewItem == testWithSource"
+				}
+			],
+			"testing/item/context": [
+				{
+					"command": "codeQLTests.acceptOutputContextTestItem",
+					"group": "qltest@1",
+					"when": "controllerId == codeql && testId =~ /^test /"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "codeQL.setCurrentDatabase",
+					"group": "9_qlCommands",
+					"when": "resourceExtname != .testproj && (resourceScheme == codeql-zip-archive || explorerResourceIsFolder || resourceExtname == .zipz)"
+				},
+				{
+					"command": "codeQL.importTestDatabase",
+					"group": "9_qlCommands",
+					"when": "explorerResourceIsFolder && resourceExtname == .testproj"
+				},
+				{
+					"command": "codeQL.viewAstContextExplorer",
+					"group": "9_qlCommands",
+					"when": "resourceScheme == codeql-zip-archive && !explorerResourceIsFolder && !listMultiSelection"
+				},
+				{
+					"command": "codeQL.viewCfgContextExplorer",
+					"group": "9_qlCommands",
+					"when": "resourceScheme == codeql-zip-archive && config.codeQL.canary"
+				},
+				{
+					"command": "codeQL.runQueries",
+					"group": "9_qlCommands",
+					"when": "resourceScheme != codeql-zip-archive"
+				},
+				{
+					"command": "codeQL.runVariantAnalysisContextExplorer",
+					"group": "9_qlCommands",
+					"when": "resourceExtname == .ql && config.codeQL.canary && config.codeQL.variantAnalysis.multiQuery"
+				},
+				{
+					"command": "codeQL.openReferencedFileContextExplorer",
+					"group": "9_qlCommands",
+					"when": "resourceExtname == .qlref"
+				},
+				{
+					"command": "codeQL.previewQueryHelpContextExplorer",
+					"group": "9_qlCommands",
+					"when": "resourceExtname == .qhelp && isWorkspaceTrusted"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "codeQL.authenticateToGitHub",
+					"when": "config.codeQL.canary"
+				},
+				{
+					"command": "codeQL.runQuery",
+					"when": "resourceLangId == ql && resourceExtname == .ql"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueryFromQueriesPanel",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueriesFromPanel",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueries.createQuery",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runLocalQueryFromFileTab",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runQueryContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.debugQuery",
+					"when": "config.codeQL.canary && editorLangId == ql && resourceExtname == .ql && !inDebugMode"
+				},
+				{
+					"command": "codeQL.debugQueryContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.startDebuggingSelection",
+					"when": "config.codeQL.canary && editorLangId == ql && debugState == inactive && debugConfigurationType == codeql"
+				},
+				{
+					"command": "codeQL.startDebuggingSelectionContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.continueDebuggingSelection",
+					"when": "config.codeQL.canary && editorLangId == ql && debugState == stopped && debugType == codeql"
+				},
+				{
+					"command": "codeQL.continueDebuggingSelectionContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runQueryOnMultipleDatabases",
+					"when": "resourceLangId == ql && resourceExtname == .ql"
+				},
+				{
+					"command": "codeQL.runQueryOnMultipleDatabasesContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runVariantAnalysis",
+					"when": "editorLangId == ql && resourceExtname == .ql"
+				},
+				{
+					"command": "codeQL.runVariantAnalysisContextExplorer",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runVariantAnalysisPublishedPack",
+					"when": "config.codeQL.canary && config.codeQL.variantAnalysis.multiQuery"
+				},
+				{
+					"command": "codeQL.runVariantAnalysisContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.runQueries",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.quickEval",
+					"when": "editorLangId == ql"
+				},
+				{
+					"command": "codeQL.quickEvalCount",
+					"when": "editorLangId == ql"
+				},
+				{
+					"command": "codeQL.quickEvalContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.openReferencedFile",
+					"when": "resourceExtname == .qlref"
+				},
+				{
+					"command": "codeQL.openReferencedFileContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.openReferencedFileContextExplorer",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.previewQueryHelp",
+					"when": "resourceExtname == .qhelp && isWorkspaceTrusted"
+				},
+				{
+					"command": "codeQL.previewQueryHelpContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.previewQueryHelpContextExplorer",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.setCurrentDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.importTestDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.getCurrentDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.getCurrentQuery",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.viewAst",
+					"when": "resourceScheme == codeql-zip-archive"
+				},
+				{
+					"command": "codeQL.viewAstContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.viewAstContextExplorer",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.viewCfg",
+					"when": "resourceScheme == codeql-zip-archive && config.codeQL.canary"
+				},
+				{
+					"command": "codeQL.viewCfgContextExplorer",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.viewCfgContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.openModelEditor"
+				},
+				{
+					"command": "codeQLLanguageSelection.setSelectedItem",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueryContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueries.runLocalQueriesContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueries.runVariantAnalysisContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.openConfigFile",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.addNewDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.addNewList",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.setSelectedItem",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.setSelectedItemContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.renameItemContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.openOnGitHubContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.removeItemContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLVariantAnalysisRepositories.importFromCodeSearch",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.setCurrentDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.renameDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.openDatabaseFolder",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.addDatabaseSource",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.sortByName",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.sortByLanguage",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.sortByDateAdded",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.removeDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseFolder",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseArchive",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.removeOrphanedDatabases",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseInternet",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.chooseDatabaseGithub",
+					"when": "false"
+				},
+				{
+					"command": "codeQLDatabases.upgradeDatabase",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.openQueryContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.removeHistoryItemContextMenu",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.removeHistoryItemContextInline",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.itemClicked",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.showQueryLog",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLog",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLogSummary",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.showEvalLogViewer",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.openQueryDirectory",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.cancel",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.openOnGithub",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.copyRepoList",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.showQueryText",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.exportResults",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.viewCsvResults",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.viewCsvAlerts",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.viewSarifAlerts",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.viewDil",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.renameItem",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.compareWith",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByName",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByDate",
+					"when": "false"
+				},
+				{
+					"command": "codeQLQueryHistory.sortByCount",
+					"when": "false"
+				},
+				{
+					"command": "codeQLAstViewer.gotoCode",
+					"when": "false"
+				},
+				{
+					"command": "codeQLAstViewer.clear",
+					"when": "false"
+				},
+				{
+					"command": "codeQLEvalLogViewer.clear",
+					"when": "false"
+				},
+				{
+					"command": "codeQLTests.acceptOutput",
+					"when": "false"
+				},
+				{
+					"command": "codeQLTests.showOutputDifferences",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.mockGitHubApiServer.startRecording",
+					"when": "config.codeQL.mockGitHubApiServer.enabled && !codeQL.mockGitHubApiServer.recording"
+				},
+				{
+					"command": "codeQL.mockGitHubApiServer.saveScenario",
+					"when": "config.codeQL.mockGitHubApiServer.enabled && codeQL.mockGitHubApiServer.recording"
+				},
+				{
+					"command": "codeQL.mockGitHubApiServer.cancelRecording",
+					"when": "config.codeQL.mockGitHubApiServer.enabled && codeQL.mockGitHubApiServer.recording"
+				},
+				{
+					"command": "codeQL.mockGitHubApiServer.loadScenario",
+					"when": "config.codeQL.mockGitHubApiServer.enabled && !codeQL.mockGitHubApiServer.recording"
+				},
+				{
+					"command": "codeQL.mockGitHubApiServer.unloadScenario",
+					"when": "config.codeQL.mockGitHubApiServer.enabled && codeQL.mockGitHubApiServer.scenarioLoaded"
+				},
+				{
+					"command": "codeQLTests.acceptOutputContextTestItem",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.gotoQLContextEditor",
+					"when": "false"
+				},
+				{
+					"command": "codeQL.trimCache",
+					"when": "codeql.supportsTrimCache"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "codeQL.runQueryContextEditor",
+					"when": "editorLangId == ql && resourceExtname == .ql && !inDebugMode"
+				},
+				{
+					"command": "codeQL.runQueryOnMultipleDatabasesContextEditor",
+					"when": "editorLangId == ql && resourceExtname == .ql"
+				},
+				{
+					"command": "codeQL.runVariantAnalysisContextEditor",
+					"when": "editorLangId == ql && resourceExtname == .ql"
+				},
+				{
+					"command": "codeQL.viewAstContextEditor",
+					"when": "resourceScheme == codeql-zip-archive"
+				},
+				{
+					"command": "codeQL.viewCfgContextEditor",
+					"when": "resourceScheme == codeql-zip-archive && config.codeQL.canary"
+				},
+				{
+					"command": "codeQL.quickEvalContextEditor",
+					"when": "editorLangId == ql && debugState == inactive"
+				},
+				{
+					"command": "codeQL.debugQueryContextEditor",
+					"when": "config.codeQL.canary && editorLangId == ql && resourceExtname == .ql && !inDebugMode"
+				},
+				{
+					"command": "codeQL.startDebuggingSelectionContextEditor",
+					"when": "config.codeQL.canary && editorLangId == ql && debugState == inactive && debugConfigurationType == codeql"
+				},
+				{
+					"command": "codeQL.continueDebuggingSelectionContextEditor",
+					"when": "config.codeQL.canary && editorLangId == ql && debugState == stopped && debugType == codeql"
+				},
+				{
+					"command": "codeQL.openReferencedFileContextEditor",
+					"when": "resourceExtname == .qlref"
+				},
+				{
+					"command": "codeQL.previewQueryHelpContextEditor",
+					"when": "resourceExtname == .qhelp && isWorkspaceTrusted"
+				},
+				{
+					"command": "codeQL.gotoQLContextEditor",
+					"when": "editorLangId == ql-summary && config.codeQL.canary"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "ql-container",
+					"title": "CodeQL",
+					"icon": "media/logo.svg"
+				}
+			],
+			"panel": [
+				{
+					"id": "codeql-methods-usage",
+					"title": "CodeQL Methods Usage",
+					"icon": "media/logo.svg"
+				}
+			]
+		},
+		"views": {
+			"ql-container": [
+				{
+					"id": "codeQLLanguageSelection",
+					"name": "Language"
+				},
+				{
+					"id": "codeQLDatabases",
+					"name": "Databases"
+				},
+				{
+					"id": "codeQLQueries",
+					"name": "Queries"
+				},
+				{
+					"id": "codeQLVariantAnalysisRepositories",
+					"name": "Variant Analysis Repositories"
+				},
+				{
+					"id": "codeQLQueryHistory",
+					"name": "Query History"
+				},
+				{
+					"id": "codeQLAstViewer",
+					"name": "AST Viewer"
+				},
+				{
+					"id": "codeQLEvalLogViewer",
+					"name": "Evaluator Log Viewer",
+					"when": "config.codeQL.canary"
+				},
+				{
+					"id": "codeQLMethodModeling",
+					"type": "webview",
+					"name": "CodeQL Method Modeling"
+				}
+			],
+			"codeql-methods-usage": [
+				{
+					"id": "codeQLMethodsUsage",
+					"name": "CodeQL Methods Usage",
+					"when": "codeql.modelEditorOpen"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "codeQLMethodsUsage",
+				"contents": "Loading..."
+			},
+			{
+				"view": "codeQLAstViewer",
+				"contents": "Run the 'CodeQL: View AST' command on an open source file from a CodeQL database.\n[View AST](command:codeQL.viewAst)"
+			},
+			{
+				"view": "codeQLQueryHistory",
+				"contents": "You have no query history items at the moment.\n\nSelect a database to run a CodeQL query and get your first results."
+			},
+			{
+				"view": "codeQLQueries",
+				"contents": "We didn't find any CodeQL queries in this workspace. [Create one to get started](command:codeQLQueries.createQuery).",
+				"when": "codeQL.noQueries"
+			},
+			{
+				"view": "codeQLDatabases",
+				"contents": "Add a CodeQL database:\n[From a folder](command:codeQLDatabases.chooseDatabaseFolder)\n[From an archive](command:codeQLDatabases.chooseDatabaseArchive)\n[From a URL (as a zip file)](command:codeQLDatabases.chooseDatabaseInternet)\n[From GitHub](command:codeQLDatabases.chooseDatabaseGithub)"
+			},
+			{
+				"view": "codeQLEvalLogViewer",
+				"contents": "Run the 'Show Evaluator Log (UI)' command on a CodeQL query run in the Query History view."
+			},
+			{
+				"view": "codeQLVariantAnalysisRepositories",
+				"contents": "Set up a controller repository to start using variant analysis. [Learn more](https://codeql.github.com/docs/codeql-for-visual-studio-code/running-codeql-queries-at-scale-with-mrva#controller-repository) about controller repositories. \n[Set up controller repository](command:codeQLVariantAnalysisRepositories.setupControllerRepository)",
+				"when": "!config.codeQL.variantAnalysis.controllerRepo"
+			}
+		]
+	},
+	"scripts": {
+		"build": "gulp",
+		"watch": "gulp watch",
+		"test": "npm-run-all test:*",
+		"test:unit": "cross-env TZ=UTC LANG=en-US jest --projects test/unit-tests",
+		"test:view": "jest --projects src/view",
+		"test:vscode-integration": "npm-run-all test:vscode-integration:*",
+		"test:vscode-integration:activated-extension": "jest --projects test/vscode-tests/activated-extension",
+		"test:vscode-integration:no-workspace": "jest --projects test/vscode-tests/no-workspace",
+		"test:vscode-integration:minimal-workspace": "jest --projects test/vscode-tests/minimal-workspace",
+		"test:cli-integration": "jest --projects test/vscode-tests/cli-integration --verbose",
+		"clean-test-dir": "find . -type d -name .vscode-test -exec rm -r {} +",
+		"update-vscode": "node ./node_modules/vscode/bin/install",
+		"format": "prettier --write **/*.{ts,tsx} && eslint . --ext .ts,.tsx --fix",
+		"lint": "eslint . --ext .js,.ts,.tsx --max-warnings=0",
+		"lint:markdown": "markdownlint-cli2 \"../../**/*.{md,mdx}\" \"!**/node_modules/**\" \"!**/.vscode-test/**\" \"!**/build/cli/v*/**\"",
+		"find-deadcode": "vite-node scripts/find-deadcode.ts",
+		"format-staged": "lint-staged",
+		"storybook": "storybook dev -p 6006",
+		"build-storybook": "storybook build",
+		"lint:scenarios": "vite-node scripts/lint-scenarios.ts",
+		"generate": "npm-run-all -p generate:*",
+		"generate:schemas": "vite-node scripts/generate-schemas.ts",
+		"generate:chromium-version": "vite-node scripts/generate-chromium-version.ts",
+		"check-types": "find . -type f -name \"tsconfig.json\" -not -path \"./node_modules/*\" | sed -r 's|/[^/]+$||' | sort | uniq | xargs -I {} sh -c \"echo Checking types in {} && cd {} && npx tsc --noEmit\"",
+		"postinstall": "patch-package",
+		"prepare": "cd ../.. && husky install"
+	},
+	"dependencies": {
+		"@floating-ui/react": "^0.26.12",
+		"@octokit/plugin-retry": "^6.0.1",
+		"@octokit/plugin-throttling": "^8.0.0",
+		"@octokit/rest": "^20.0.2",
+		"@vscode/codicons": "^0.0.35",
+		"@vscode/debugadapter": "^1.59.0",
+		"@vscode/debugprotocol": "^1.65.0",
+		"@vscode/webview-ui-toolkit": "^1.0.1",
+		"ajv": "^8.11.0",
+		"child-process-promise": "^2.2.1",
+		"chokidar": "^3.6.0",
+		"d3": "^7.9.0",
+		"d3-graphviz": "^5.0.2",
+		"fs-extra": "^11.1.1",
+		"js-yaml": "^4.1.0",
+		"msw": "^2.2.13",
+		"nanoid": "^5.0.7",
+		"node-fetch": "^2.6.7",
+		"p-queue": "^8.0.1",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"semver": "^7.6.2",
+		"source-map": "^0.7.4",
+		"source-map-support": "^0.5.21",
+		"stream-json": "^1.7.3",
+		"styled-components": "^6.1.9",
+		"tmp": "^0.2.1",
+		"tmp-promise": "^3.0.2",
+		"tree-kill": "^1.2.2",
+		"vscode-extension-telemetry": "^0.1.6",
+		"vscode-jsonrpc": "^8.0.2",
+		"vscode-languageclient": "^8.0.2",
+		"yauzl": "^2.10.0",
+		"zip-a-folder": "^3.1.6"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.24.4",
+		"@babel/plugin-transform-modules-commonjs": "^7.18.6",
+		"@babel/preset-env": "^7.24.4",
+		"@babel/preset-react": "^7.24.1",
+		"@babel/preset-typescript": "^7.21.4",
+		"@faker-js/faker": "^8.4.1",
+		"@github/markdownlint-github": "^0.6.2",
+		"@playwright/test": "^1.40.1",
+		"@storybook/addon-a11y": "^8.1.3",
+		"@storybook/addon-actions": "^8.1.3",
+		"@storybook/addon-essentials": "^8.1.3",
+		"@storybook/addon-interactions": "^8.1.3",
+		"@storybook/addon-links": "^8.1.3",
+		"@storybook/blocks": "^8.0.2",
+		"@storybook/components": "^8.0.2",
+		"@storybook/csf": "^0.1.7",
+		"@storybook/icons": "^1.2.9",
+		"@storybook/manager-api": "^8.1.3",
+		"@storybook/react": "^8.1.3",
+		"@storybook/react-vite": "^8.1.3",
+		"@storybook/theming": "^8.1.3",
+		"@testing-library/dom": "^10.1.0",
+		"@testing-library/jest-dom": "^6.4.5",
+		"@testing-library/react": "^15.0.7",
+		"@testing-library/user-event": "^14.5.2",
+		"@types/child-process-promise": "^2.2.1",
+		"@types/d3": "^7.4.0",
+		"@types/d3-graphviz": "^2.6.6",
+		"@types/del": "^4.0.0",
+		"@types/fs-extra": "^11.0.1",
+		"@types/gulp": "^4.0.9",
+		"@types/gulp-replace": "^1.1.0",
+		"@types/jest": "^29.5.12",
+		"@types/js-yaml": "^4.0.6",
+		"@types/nanoid": "^3.0.0",
+		"@types/node": "18.18.*",
+		"@types/node-fetch": "^2.5.2",
+		"@types/react": "^18.3.1",
+		"@types/react-dom": "^18.3.0",
+		"@types/sarif": "^2.1.2",
+		"@types/semver": "^7.5.8",
+		"@types/stream-json": "^1.7.1",
+		"@types/styled-components": "^5.1.11",
+		"@types/tar-stream": "^3.1.3",
+		"@types/through2": "^2.0.36",
+		"@types/tmp": "^0.2.6",
+		"@types/vscode": "^1.82.0",
+		"@types/yauzl": "^2.10.3",
+		"@typescript-eslint/eslint-plugin": "^7.5.0",
+		"@typescript-eslint/parser": "^7.5.0",
+		"@vscode/test-electron": "^2.3.9",
+		"@vscode/vsce": "^2.24.0",
+		"ansi-colors": "^4.1.1",
+		"applicationinsights": "^2.9.5",
+		"cosmiconfig": "^9.0.0",
+		"cross-env": "^7.0.3",
+		"del": "^6.0.0",
+		"eslint": "^8.56.0",
+		"eslint-config-prettier": "^9.0.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-deprecation": "^2.0.0",
+		"eslint-plugin-etc": "^2.0.2",
+		"eslint-plugin-github": "^4.10.2",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-jest-dom": "^5.2.0",
+		"eslint-plugin-prettier": "^5.1.3",
+		"eslint-plugin-react": "^7.34.1",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"eslint-plugin-storybook": "^0.8.0",
+		"glob": "^10.0.0",
+		"gulp": "^4.0.2",
+		"gulp-esbuild": "^0.12.0",
+		"gulp-replace": "^1.1.3",
+		"gulp-typescript": "^5.0.1",
+		"husky": "^9.0.11",
+		"jest": "^29.0.3",
+		"jest-environment-jsdom": "^29.0.3",
+		"jest-runner-vscode": "^3.0.1",
+		"lint-staged": "^15.2.2",
+		"markdownlint-cli2": "^0.13.0",
+		"markdownlint-cli2-formatter-pretty": "^0.0.6",
+		"npm-run-all": "^4.1.5",
+		"patch-package": "^8.0.0",
+		"prettier": "^3.2.5",
+		"storybook": "^8.1.3",
+		"tar-stream": "^3.1.7",
+		"through2": "^4.0.2",
+		"ts-jest": "^29.1.2",
+		"ts-json-schema-generator": "^2.1.1",
+		"ts-node": "^10.9.2",
+		"ts-unused-exports": "^10.0.0",
+		"typescript": "^5.0.2",
+		"vite": "^5.2.11",
+		"vite-node": "^1.5.3"
+	},
+	"lint-staged": {
+		"./**/*.{json,css,scss}": [
+			"prettier --write"
+		],
+		"./**/*.{ts,tsx}": [
+			"prettier --write",
+			"eslint --fix"
+		]
+	},
+	"__metadata": {
+		"id": "56d1e1f8-892a-4abc-b402-c473b832e324",
+		"publisherId": "7c1c19cd-78eb-4dfb-8999-99caf7679002",
+		"publisherDisplayName": "GitHub",
+		"targetPlatform": "undefined",
+		"isApplicationScoped": false,
+		"isPreReleaseVersion": false,
+		"hasPreReleaseVersion": false,
+		"installedTimestamp": 1717160115241,
+		"pinned": false,
+		"preRelease": false,
+		"source": "gallery"
+	}
+}
