@@ -2915,7 +2915,7 @@
 		"eslint-plugin-import": "2.22.1",
 		"event-stream": "^4.0.1",
 		"fork-ts-checker-webpack-plugin": "6.1.1",
-		"glob": "7.1.6",
+		"glob": "13.0.6",
 		"graphql": "15.5.0",
 		"graphql-tag": "2.11.0",
 		"gulp-filter": "^7.0.0",
@@ -2948,7 +2948,7 @@
 		"typescript": "4.5.5",
 		"typescript-formatter": "^7.2.2",
 		"vinyl-fs": "^3.0.3",
-		"webpack": "5.94.0",
+		"webpack": "5.104.1",
 		"webpack-cli": "4.2.0"
 	},
 	"dependencies": {
@@ -2970,7 +2970,7 @@
 		"ssh-config": "4.1.1",
 		"tunnel": "0.0.6",
 		"url-search-params-polyfill": "^8.1.1",
-		"uuid": "8.3.2",
+		"uuid": "14.0.0",
 		"vscode-tas-client": "^0.1.75",
 		"vsls": "^0.3.967"
 	},
